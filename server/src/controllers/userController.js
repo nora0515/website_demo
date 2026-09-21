@@ -1,16 +1,7 @@
-import { randomBytes, scrypt } from 'node:crypto';
-import { promisify } from 'node:util';
 import User from '../models/User.js';
+import { hashPassword } from '../utils/password.js';
 
-const deriveKey = promisify(scrypt);
-
-async function hashPassword(password) {
-  const salt = randomBytes(16).toString('hex');
-  const key = await deriveKey(password, salt, 64);
-  return `scrypt:${salt}:${key.toString('hex')}`;
-}
-
-function publicUser(user) {
+export function publicUser(user) {
   const result = user.toObject();
   delete result.password;
   delete result.__v;

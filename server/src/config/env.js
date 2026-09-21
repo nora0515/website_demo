@@ -9,9 +9,15 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) {
 if (!process.env.MONGODB_URI) {
   throw new Error('MONGODB_URI is required. Configure server/.env first.');
 }
+// A short secret makes signed tokens guessable, so refuse to start without a real one.
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+  throw new Error('JWT_SECRET is required and must be at least 32 characters. Configure server/.env first.');
+}
 
 export const env = {
   port,
   mongodbUri: process.env.MONGODB_URI,
   clientOrigin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+  jwtSecret: process.env.JWT_SECRET,
+  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '1h',
 };

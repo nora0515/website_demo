@@ -24,3 +24,15 @@ export async function createUser(user) {
   if (!data.user?._id) throw new Error('회원가입 결과를 확인하지 못했습니다.')
   return data.user
 }
+
+// The list endpoint reports the full count, so one row is enough to read it.
+export async function countUsers() {
+  try {
+    const response = await fetch(`${baseUrl}/users?limit=1`, { signal: AbortSignal.timeout(10000) })
+    if (!response.ok) return null
+    const data = await response.json()
+    return typeof data.total === 'number' ? data.total : null
+  } catch {
+    return null
+  }
+}
