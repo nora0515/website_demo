@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import mongoose from 'mongoose';
+import { env } from '../config/env.js';
 import usersRouter from './users.js';
 import authRouter from './auth.js';
 import productsRouter from './products.js';
@@ -10,10 +11,13 @@ const router = Router();
 
 router.get('/health', (req, res) => {
   const connected = mongoose.connection.readyState === 1;
+  const healthy = connected && env.problems.length === 0;
   res.set('Cache-Control', 'no-store');
-  res.status(connected ? 200 : 503).json({
-    status: connected ? 'ok' : 'unavailable',
+  res.status(healthy ? 200 : 503).json({
+    status: healthy ? 'ok' : 'unavailable',
     database: connected ? 'connected' : 'disconnected',
+    // Names of missing or invalid settings, never their values.
+    config: env.problems.length === 0 ? 'ok' : env.problems,
   });
 });
 

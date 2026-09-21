@@ -16,7 +16,13 @@ test('app routing, CORS, health caching and JSON error handling', async () => {
     const health = await fetch(`${base}/api/health`);
     assert.equal(health.status, 503);
     assert.equal(health.headers.get('cache-control'), 'no-store');
-    assert.deepEqual(await health.json(), { status: 'unavailable', database: 'disconnected' });
+    // Configuration is reported alongside the database, so a deployed server
+    // can say what is missing without anyone reading its logs.
+    assert.deepEqual(await health.json(), {
+      status: 'unavailable',
+      database: 'disconnected',
+      config: 'ok',
+    });
 
     const missing = await fetch(`${base}/api/missing`);
     assert.equal(missing.status, 404);
