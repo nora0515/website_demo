@@ -35,6 +35,8 @@ test('user CRUD, validation, password handling and timestamps', async () => {
     const stored = await User.findById(user._id);
     assert.match(stored.password, /^scrypt:[a-f0-9]{32}:[a-f0-9]{128}$/);
     assert.notEqual(stored.password, input.password);
+    assert.equal((await request('', 'POST', input)).status, 409);
+    assert.equal(await User.countDocuments(), 1);
     const list = await (await request('?page=1&limit=1')).json();
     assert.equal(list.total, 1);
     assert.equal(list.users[0].password, undefined);

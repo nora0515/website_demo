@@ -5,7 +5,7 @@
   "description": "Shopping mall API built with Express and MongoDB",
   "type": "module",
   "scripts": {
-    "dev": "node --watch src/server.js",
+    "dev": "nodemon src/server.js",
     "start": "node src/server.js",
     "test": "node --test"
   },
@@ -19,6 +19,7 @@
     "mongoose": "^9.10.1"
   },
   "devDependencies": {
-    "mongodb-memory-server": "^11.2.0"
+    "mongodb-memory-server": "^11.2.0",
+    "nodemon": "^3.1.14"
   }
 }

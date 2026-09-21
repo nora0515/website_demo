@@ -43,6 +43,10 @@ router.patch('/:id', validateBody, updateUser);
 router.delete('/:id', deleteUser);
 
 router.use((err, req, res, next) => {
+  // The unique index is the last line of defence when two signups race.
+  if (err?.code === 11000) {
+    return res.status(409).json({ message: 'This phone number is already registered.' });
+  }
   if (err instanceof mongoose.Error.ValidationError) {
     return res.status(400).json({
       message: 'Invalid user data.',

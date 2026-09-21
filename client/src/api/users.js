@@ -13,6 +13,9 @@ export async function createUser(user) {
     throw new Error('서버 응답을 확인하지 못했습니다. 연결 상태를 확인해 주세요.')
   }
   if (!response.ok) {
+    if (response.status === 409) {
+      throw new Error('이미 가입된 전화번호입니다.')
+    }
     throw new Error(response.status === 400
       ? '입력 정보를 다시 확인해 주세요.'
       : '회원가입을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.')

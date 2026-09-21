@@ -20,6 +20,9 @@ function publicUser(user) {
 export async function createUser(req, res) {
   const user = new User(req.body);
   await user.validate();
+  if (await User.exists({ phone_number: user.phone_number })) {
+    return res.status(409).json({ message: 'This phone number is already registered.' });
+  }
   user.password = await hashPassword(user.password);
   await user.save();
   res.status(201).location(`/api/users/${user.id}`).json({ user: publicUser(user) });
