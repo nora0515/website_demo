@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import NavBar from '@/components/NavBar'
 import ProductCard from '@/components/ProductCard'
 import Pagination from '@/components/Pagination'
-import ServerStatus from '@/components/ServerStatus'
 import useSession from '@/hooks/useSession'
 import useCart from '@/hooks/useCart'
 import { listProducts } from '@/api/products'
@@ -21,6 +20,10 @@ function Hero() {
 }
 
 const PER_PAGE = 8
+const SORTS = [
+  { id: 'recommended', label: '추천순' },
+  { id: 'new', label: '신상품순' },
+]
 
 export default function MainPage() {
   const { user, loading, signOut } = useSession()
@@ -28,6 +31,7 @@ export default function MainPage() {
   // The bar sits on the banner at the top and turns solid once past it.
   const [solid, setSolid] = useState(false)
   const [active, setActive] = useState('전체')
+  const [sort, setSort] = useState('recommended')
   const [page, setPage] = useState(1)
   const [items, setItems] = useState([])
   const [total, setTotal] = useState(0)
@@ -44,7 +48,7 @@ export default function MainPage() {
   useEffect(() => {
     let live = true
     // The server filters by category, so switching tabs refetches.
-    listProducts({ page, limit: PER_PAGE, category: active === '전체' ? undefined : active })
+    listProducts({ page, limit: PER_PAGE, sort, category: active === '전체' ? undefined : active })
       .then((data) => {
         if (!live) return
         setItems(data.products)
@@ -55,7 +59,7 @@ export default function MainPage() {
       // A slow response from a previous tab must not overwrite the current one.
       .finally(() => { if (live) setListing(false) })
     return () => { live = false }
-  }, [active, page])
+  }, [active, sort, page])
 
   // Flipping the spinner on here, in the event, keeps the effect free of
   // synchronous state updates.
@@ -64,6 +68,14 @@ export default function MainPage() {
     setListing(true)
     setActive(category)
     // A filter change invalidates the current page number.
+    setPage(1)
+  }
+
+  function selectSort(next) {
+    if (next === sort) return
+    setListing(true)
+    setSort(next)
+    // A different order invalidates the current page number.
     setPage(1)
   }
 
@@ -84,7 +96,14 @@ export default function MainPage() {
 
         <div className="listing-head">
           <p className="count">{active} <strong>{total}</strong>건</p>
-          <p className="sort">신상품순</p>
+          <div className="sort">
+            {SORTS.map(({ id, label }) => (
+              <button key={id} type="button"
+                className={id === sort ? 'sort-option is-active' : 'sort-option'}
+                aria-pressed={id === sort}
+                onClick={() => selectSort(id)}>{label}</button>
+            ))}
+          </div>
         </div>
 
         {listing
@@ -99,12 +118,10 @@ export default function MainPage() {
                 </div>
                 <Pagination page={page} totalPages={Math.ceil(total / PER_PAGE)} onChange={goToPage} />
               </>}
-
-        <ServerStatus />
       </main>
 
       <footer className="shop-footer">
-        <p>SHOPPINGMALL</p>
+        <a className="footer-brand" href="/">NORAMALL</a>
         <p>React + Vite 학습용 프로젝트</p>
       </footer>
     </div>

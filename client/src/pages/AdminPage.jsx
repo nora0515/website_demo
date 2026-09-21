@@ -60,14 +60,16 @@ export default function AdminPage() {
   return (
     <div className="admin">
       <header className="admin-nav">
-        <p className="admin-brand">SHOPPINGMALL <span className="admin-tag">ADMIN</span></p>
+        <p className="admin-brand">
+          <a href="/">NORAMALL</a> <span className="admin-tag">ADMIN</span>
+        </p>
         <a className="admin-back" href="/">쇼핑몰로 돌아가기</a>
       </header>
 
       <main className="admin-body">
         <section className="admin-heading">
           <h1>관리자 대시보드</h1>
-          <p>SHOPPINGMALL 쇼핑몰 관리 시스템에 오신 것을 환영합니다.</p>
+          <p>NORAMALL 쇼핑몰 관리 시스템에 오신 것을 환영합니다.</p>
         </section>
 
         <section className="stat-grid" aria-label="요약 지표">

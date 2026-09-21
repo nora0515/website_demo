@@ -27,9 +27,10 @@ async function request(path, options = {}) {
   return response.json()
 }
 
-export function listProducts({ page = 1, limit = 50, category } = {}) {
+export function listProducts({ page = 1, limit = 50, category, sort } = {}) {
   const query = new URLSearchParams({ page, limit })
   if (category) query.set('category', category)
+  if (sort) query.set('sort', sort)
   return request(`/products?${query}`)
 }
 

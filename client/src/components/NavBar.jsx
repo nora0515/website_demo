@@ -12,7 +12,7 @@ export default function NavBar({ user, loading, onSignOut, cartCount = 0, solid 
   return (
     <header className={solid ? 'nav is-solid' : 'nav is-overlay'}>
       <div className="nav-top">
-        <a className="brand" href="/">SHOPPINGMALL</a>
+        <a className="brand" href="/">NORAMALL</a>
         <div className="nav-actions">
           <button className="icon-button" type="button" aria-label="검색"><Icon kind="search" /></button>
           <a className="icon-button cart-link" href="/cart" aria-label={`장바구니 ${cartCount}개`}>

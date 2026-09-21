@@ -32,8 +32,17 @@ router.param('id', (req, res, next, id) => {
   next();
 });
 
+const SORTS = ['new', 'recommended'];
+
+function validateSort(req, res, next) {
+  if (req.query.sort !== undefined && !SORTS.includes(req.query.sort)) {
+    return res.status(400).json({ message: `sort must be one of: ${SORTS.join(', ')}.` });
+  }
+  next();
+}
+
 // The catalogue is public; changing it is not.
-router.get('/', getProducts);
+router.get('/', validateSort, getProducts);
 
 router.get('/:id', getProductById);
 

@@ -105,6 +105,35 @@ test('product CRUD, validation and admin-only writes', async () => {
     assert.equal((await call(`/products/${product._id}`, 'DELETE', undefined, admin)).status, 204);
     assert.equal((await call(`/products/${product._id}`)).status, 404);
     assert.equal((await call(`/products/${product._id}`, 'DELETE', undefined, admin)).status, 404);
+
+    // Recommended order: names starting 짱 first, then 탄, then the rest by
+    // Korean alphabetical order — regardless of when they were added.
+    for (const [sku, name] of [
+      ['R-1', '하늘 도어'], ['R-2', '짱짱한 중문'], ['R-3', '가나 도어'],
+      ['R-4', '탄탄한 필름'], ['R-5', '짱 좋은 도어'], ['R-6', '나무 도어'],
+      ['R-7', '탄력 도어'],
+    ]) {
+      assert.equal((await call('/products', 'POST',
+        { sku, name, price: 1000, category: '도어' }, admin)).status, 201);
+    }
+    const ordered = await (await call('/products?sort=recommended&limit=10')).json();
+    assert.deepEqual(ordered.products.map((item) => item.name), [
+      '짱 좋은 도어', '짱짱한 중문',
+      '탄력 도어', '탄탄한 필름',
+      // '방문' is the product left over from the checks above.
+      '가나 도어', '나무 도어', '방문', '하늘 도어',
+    ]);
+    // Paging keeps that order rather than restarting it.
+    const first = await (await call('/products?sort=recommended&limit=2&page=1')).json();
+    const second = await (await call('/products?sort=recommended&limit=2&page=2')).json();
+    assert.deepEqual(first.products.map((item) => item.name), ['짱 좋은 도어', '짱짱한 중문']);
+    assert.deepEqual(second.products.map((item) => item.name), ['탄력 도어', '탄탄한 필름']);
+    assert.equal(first.total, 8);
+    assert.equal(first.products[0].__v, undefined);
+    assert.equal(first.products[0].rank, undefined);
+    // The filter still applies alongside the sort.
+    assert.equal((await (await call('/products?sort=recommended&category=도어')).json()).total, 8);
+    assert.equal((await call('/products?sort=unknown')).status, 400);
   } finally {
     if (server) await new Promise((resolve) => server.close(resolve));
     await mongoose.disconnect();

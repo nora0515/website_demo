@@ -1,5 +1,8 @@
 import Product from '../models/Product.js';
 
+// Names starting with these come first, in this order.
+const FEATURED = ['짱', '탄'];
+
 function publicProduct(product) {
   const result = product.toObject();
   delete result.__v;
@@ -24,11 +27,39 @@ export async function getProducts(req, res) {
     return res.status(400).json({ message: 'page must be a positive integer; limit must be between 1 and 100.' });
   }
   const filter = req.query.category === undefined ? {} : { category: req.query.category };
-  const [products, total] = await Promise.all([
-    Product.find(filter).select('-__v').sort({ createdAt: -1, _id: -1 })
-      .skip((page - 1) * limit).limit(limit),
-    Product.countDocuments(filter),
-  ]);
+  const skip = (page - 1) * limit;
+
+  // Sorting happens here rather than in the browser: with pagination the client
+  // only ever holds one page, so it cannot order the whole catalogue.
+  const query = req.query.sort === 'recommended'
+    ? Product.aggregate([
+      { $match: filter },
+      // Featured prefixes first, everything else after.
+      {
+        $addFields: {
+          rank: {
+            $switch: {
+              branches: FEATURED.map((prefix, index) => ({
+                // $substrCP counts code points, so it does not split a Hangul
+                // character the way the byte-based $substr would.
+                case: { $eq: [{ $substrCP: ['$name', 0, 1] }, prefix] },
+                then: index,
+              })),
+              default: FEATURED.length,
+            },
+          },
+        },
+      },
+      { $sort: { rank: 1, name: 1, _id: 1 } },
+      { $skip: skip },
+      { $limit: limit },
+      { $project: { __v: 0, rank: 0 } },
+    // Korean collation puts 가나다 in the order a reader expects.
+    ]).collation({ locale: 'ko' })
+    : Product.find(filter).select('-__v').sort({ createdAt: -1, _id: -1 })
+      .skip(skip).limit(limit);
+
+  const [products, total] = await Promise.all([query, Product.countDocuments(filter)]);
   res.json({ products, page, limit, total });
 }
 
