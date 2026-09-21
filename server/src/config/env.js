@@ -20,4 +20,8 @@ export const env = {
   clientOrigin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
   jwtSecret: process.env.JWT_SECRET,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '1h',
+  // Optional: without these the payment routes answer 503 instead of failing
+  // at startup, so the rest of the app still runs.
+  impApiKey: process.env.IMP_API_KEY || '',
+  impApiSecret: process.env.IMP_API_SECRET || '',
 };

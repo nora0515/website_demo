@@ -27,6 +27,8 @@ async function request(path, options = {}) {
     throw new Error({
       400: '장바구니가 비어 있어 주문할 수 없습니다.',
       403: '관리자만 사용할 수 있는 기능입니다.',
+      502: '결제 확인에 실패했습니다. 결제내역을 확인한 뒤 고객센터로 문의해 주세요.',
+      503: '결제 기능이 설정되지 않았습니다.',
       404: '주문을 찾을 수 없습니다.',
       // The server explains exactly why a status change was refused.
       409: detail === 'A confirmed order can no longer be cancelled.'
@@ -43,6 +45,11 @@ async function request(path, options = {}) {
 
 export function placeOrder() {
   return request('/orders', { method: 'POST' }).then((data) => data.order)
+}
+
+// The server asks the gateway about this order itself, so nothing is sent.
+export function payOrder(id) {
+  return request(`/orders/${id}/pay`, { method: 'POST' }).then((data) => data.order)
 }
 
 export function listOrders({ page = 1, limit = 20, status } = {}) {

@@ -47,7 +47,8 @@ test('orders: numbering, cart handover, access control, status and cancellation'
     const order = (await json(placed)).order;
     assert.match(order.order_number, /^ORD-\d{6}$/);
     assert.equal(order.status, 'pending');
-    assert.equal(order.payment_status, 'paid');
+    // The gateway has not been called yet, so nothing is paid for.
+    assert.equal(order.payment_status, 'pending');
     assert.equal(order.total, 3000);
     assert.equal(order.items[0].sku, 'MD-001');
     assert.equal(order.items[0].quantity, 3);
@@ -77,6 +78,11 @@ test('orders: numbering, cart handover, access control, status and cancellation'
     assert.equal((await call('/orders/bad-id', 'GET', undefined, alice)).status, 400);
     assert.equal((await call('/orders?status=unknown', 'GET', undefined, alice)).status, 400);
 
+    // Confirming an unpaid order is refused.
+    assert.equal((await call(`/orders/${order._id}/confirm`, 'PATCH', undefined, admin)).status, 409);
+    // Stand in for a verified gateway payment, which cannot run offline.
+    await Order.updateOne({ _id: order._id }, { payment_status: 'paid' });
+
     // Only an administrator may confirm, and confirming is not a customer action.
     assert.equal((await call(`/orders/${order._id}/confirm`, 'PATCH', undefined, alice)).status, 403);
     assert.equal((await call(`/orders/${order._id}/cancel`, 'PATCH', undefined, bob)).status, 404);
@@ -86,19 +92,47 @@ test('orders: numbering, cart handover, access control, status and cancellation'
     assert.equal(confirmed.payment_status, 'paid');
     assert.ok(confirmed.confirmed_at);
     assert.equal((await call(`/orders/${order._id}/confirm`, 'PATCH', undefined, admin)).status, 409);
-    // A confirmed order can no longer be cancelled.
+    // The customer's cancellation window closes once the order is confirmed.
     assert.equal((await call(`/orders/${order._id}/cancel`, 'PATCH', undefined, alice)).status, 409);
+    // An administrator may still cancel it, which means refunding first: this
+    // order was never really paid, so the gateway refuses and nothing changes.
+    assert.equal((await call(`/orders/${order._id}/cancel`, 'PATCH', undefined, admin)).status, 502);
+    assert.equal((await Order.findById(order._id)).status, 'confirmed');
+    // With nothing to refund, the administrator's cancellation goes through.
+    await Order.updateOne({ _id: order._id }, { payment_status: 'pending' });
+    const reversed = (await json(await call(`/orders/${order._id}/cancel`, 'PATCH', undefined, admin))).order;
+    assert.equal(reversed.status, 'cancelled');
+    await Order.updateOne({ _id: order._id }, { status: 'confirmed', payment_status: 'paid' });
 
-    // A pending order can be cancelled by its owner, and the payment reverses.
+    // An unpaid pending order is cancelled outright: there is nothing to refund,
+    // so the gateway is not involved.
     const cancelled = (await json(await call(`/orders/${second._id}/cancel`, 'PATCH', undefined, alice))).order;
     assert.equal(cancelled.status, 'cancelled');
-    assert.equal(cancelled.payment_status, 'refunded');
+    assert.equal(cancelled.payment_status, 'pending');
     assert.ok(cancelled.cancelled_at);
+    assert.equal(cancelled.refunded_at, undefined);
     assert.equal((await call(`/orders/${second._id}/cancel`, 'PATCH', undefined, alice)).status, 409);
     assert.equal((await call(`/orders/${second._id}/confirm`, 'PATCH', undefined, admin)).status, 409);
 
     assert.equal((await json(await call('/orders?status=confirmed', 'GET', undefined, admin))).total, 1);
     assert.equal((await json(await call('/orders?status=cancelled', 'GET', undefined, admin))).total, 1);
+
+    // Cancelling a paid order refunds first. This one was never really paid, so
+    // the gateway refuses and the order must be left exactly as it was.
+    await call('/cart/items', 'POST', { product_id: product._id }, alice);
+    const third = (await json(await call('/orders', 'POST', undefined, alice))).order;
+    await Order.updateOne({ _id: third._id }, { payment_status: 'paid' });
+    assert.equal((await call(`/orders/${third._id}/cancel`, 'PATCH', undefined, admin)).status, 502);
+    const untouched = await Order.findById(third._id);
+    assert.equal(untouched.status, 'pending');
+    assert.equal(untouched.payment_status, 'paid');
+    assert.equal(untouched.cancelled_at, undefined);
+
+    // Paying is refused before the gateway is ever contacted: someone else's
+    // order, an order already paid for, and a cancelled one.
+    assert.equal((await call(`/orders/${order._id}/pay`, 'POST', undefined, bob)).status, 404);
+    assert.equal((await call(`/orders/${order._id}/pay`, 'POST', undefined, alice)).status, 409);
+    assert.equal((await call(`/orders/${second._id}/pay`, 'POST', undefined, alice)).status, 409);
   } finally {
     if (server) await new Promise((resolve) => server.close(resolve));
     await mongoose.disconnect();

@@ -8,9 +8,9 @@ function Icon({ kind }) {
   return <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[kind]}</svg>
 }
 
-export default function NavBar({ user, loading, onSignOut, cartCount = 0, categories, active, onSelect }) {
+export default function NavBar({ user, loading, onSignOut, cartCount = 0, solid = true, categories, active, onSelect }) {
   return (
-    <header className="nav">
+    <header className={solid ? 'nav is-solid' : 'nav is-overlay'}>
       <div className="nav-top">
         <a className="brand" href="/">SHOPPINGMALL</a>
         <div className="nav-actions">

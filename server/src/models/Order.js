@@ -39,8 +39,12 @@ const orderSchema = new mongoose.Schema(
     total: { type: Number, required: true, min: 0 },
     status: { type: String, required: true, enum: ORDER_STATUSES, default: 'pending' },
     payment_status: { type: String, required: true, enum: PAYMENT_STATUSES, default: 'pending' },
+    // Set once the gateway confirms the payment; kept for reconciliation.
+    payment_id: { type: String },
+    paid_at: { type: Date },
     confirmed_at: { type: Date },
     cancelled_at: { type: Date },
+    refunded_at: { type: Date },
   },
   { timestamps: true },
 );

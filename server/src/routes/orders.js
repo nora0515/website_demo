@@ -6,6 +6,7 @@ import {
   getOrderById,
   cancelOrder,
   confirmOrder,
+  payOrder,
 } from '../controllers/orderController.js';
 import { requireAuth, requireAdmin } from '../middleware/requireAuth.js';
 import { ORDER_STATUSES } from '../models/Order.js';
@@ -34,6 +35,10 @@ router.post('/', createOrder);
 router.get('/', validateStatusQuery, getOrders);
 
 router.get('/:id', getOrderById);
+
+// The gateway is asked about this order directly, so the request carries no
+// body the caller could influence.
+router.post('/:id/pay', payOrder);
 
 // The customer may cancel their own order; an administrator may cancel any.
 router.patch('/:id/cancel', cancelOrder);

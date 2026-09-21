@@ -2,8 +2,9 @@ import { useState } from 'react'
 import ProductThumb from '@/components/ProductThumb'
 import useCart from '@/hooks/useCart'
 import useSession from '@/hooks/useSession'
-import { placeOrder } from '@/api/orders'
+import { payOrder, placeOrder } from '@/api/orders'
 import { NotSignedInError } from '@/api/cart'
+import { isConfigured, requestPayment } from '@/lib/portone'
 
 const won = new Intl.NumberFormat('ko-KR')
 
@@ -33,11 +34,29 @@ export default function CheckoutPage() {
   async function submit() {
     setPlacing(true)
     setError('')
+    let placed
     try {
-      setOrder(await placeOrder())
+      // The order exists first so the gateway has a merchant_uid to pay against.
+      placed = await placeOrder()
+      await requestPayment({
+        orderNumber: placed.order_number,
+        amount: placed.total,
+        name: placed.items.length > 1
+          ? `${placed.items[0].name} 외 ${placed.items.length - 1}건`
+          : placed.items[0].name,
+        buyer: user,
+      })
+      // The server re-reads the payment from the gateway; the browser's word
+      // that it succeeded is not enough.
+      setOrder(await payOrder(placed._id))
     } catch (err) {
-      if (err instanceof NotSignedInError) window.location.assign('/login')
-      else setError(err.message)
+      if (err instanceof NotSignedInError) {
+        window.location.assign('/login')
+        return
+      }
+      setError(placed
+        ? `${err.message} 주문 ${placed.order_number}은(는) 결제 대기 상태로 주문 내역에 있습니다.`
+        : err.message)
     } finally {
       setPlacing(false)
     }
@@ -70,7 +89,7 @@ export default function CheckoutPage() {
             <h1>주문이 접수되었습니다</h1>
             <p className="order-number-big">{order.order_number}</p>
             <p className="done-lead">
-              결제가 완료되었습니다. <strong>관리자 승인</strong> 후 주문이 확정됩니다.
+              결제가 정상 처리되었습니다. <strong>관리자 승인</strong> 후 주문이 확정됩니다.
               확정 전까지는 주문 내역에서 취소할 수 있습니다.
             </p>
             <div className="done-actions">
@@ -120,8 +139,10 @@ export default function CheckoutPage() {
             <label className="pay-option">
               <input type="radio" name="payment" defaultChecked readOnly />
               <span>
-                <strong>모의 결제</strong>
-                <small>토이 프로젝트용입니다. 실제로 결제되지 않습니다.</small>
+                <strong>신용·체크카드 (KG이니시스)</strong>
+                <small>{isConfigured
+                  ? '테스트 모드입니다. 실제로 청구되지 않습니다.'
+                  : '결제 설정이 없어 결제를 진행할 수 없습니다.'}</small>
               </span>
             </label>
           </section>
@@ -151,8 +172,9 @@ export default function CheckoutPage() {
             <div><dt>배송비</dt><dd>없음</dd></div>
           </dl>
           <p className="cart-total"><span>총 결제 금액</span><strong>{won.format(cart.total)}원</strong></p>
-          <button className="checkout" type="button" disabled={placing} onClick={submit}>
-            {placing ? '처리 중…' : `${won.format(cart.total)}원 결제하기`}
+          <button className="checkout" type="button" disabled={placing || !isConfigured}
+            onClick={submit}>
+            {placing ? '결제 진행 중…' : `${won.format(cart.total)}원 결제하기`}
           </button>
           {error && <p className="submit-error" role="alert">{error}</p>}
           <p className="checkout-fineprint">

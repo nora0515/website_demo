@@ -118,15 +118,21 @@ export default function AdminOrdersPage() {
                       <td><OrderStatus status={order.status} payment={order.payment_status} /></td>
                       <td><small>{when.format(new Date(order.createdAt))}</small></td>
                       <td className="right">
-                        {/* Only a pending order can still be settled either way. */}
-                        {order.status === 'pending' && (
-                          <div className="row-actions">
+                        <div className="row-actions">
+                          {order.status === 'pending' && (
                             <button className="row-approve" type="button" disabled={busy === order._id}
                               onClick={() => act(order, confirmOrder, '승인')}>승인</button>
+                          )}
+                          {/* An administrator may also reverse a confirmed order,
+                              which refunds it. */}
+                          {order.status !== 'cancelled' && (
                             <button className="row-delete" type="button" disabled={busy === order._id}
-                              onClick={() => act(order, cancelOrder, '취소')}>취소</button>
-                          </div>
-                        )}
+                              onClick={() => act(order, cancelOrder,
+                                order.status === 'confirmed' ? '취소(환불)' : '취소')}>
+                              {order.status === 'confirmed' ? '취소·환불' : '취소'}
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}

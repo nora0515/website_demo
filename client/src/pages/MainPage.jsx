@@ -7,13 +7,15 @@ import useSession from '@/hooks/useSession'
 import useCart from '@/hooks/useCart'
 import { listProducts } from '@/api/products'
 import { categories } from '@/data/products'
+// Imported rather than served from public/ so Vite fingerprints the filename:
+// replacing the picture changes the URL, and no stale copy can be cached.
+import heroImage from '@/assets/hero.jpg'
 
 function Hero() {
+  // Full-bleed banner: no overlaid text, so the artwork carries the section.
   return (
     <section className="hero">
-      <p className="hero-eyebrow">INTERIOR DOOR</p>
-      <h1>공간을 바꾸는<br />가장 확실한 한 끗</h1>
-      <p className="hero-lead">중문부터 시공까지, 집의 인상을 정리해 주는 도어 컬렉션</p>
+      <img src={heroImage} alt="" />
     </section>
   )
 }
@@ -23,12 +25,21 @@ const PER_PAGE = 8
 export default function MainPage() {
   const { user, loading, signOut } = useSession()
   const { cart } = useCart()
+  // The bar sits on the banner at the top and turns solid once past it.
+  const [solid, setSolid] = useState(false)
   const [active, setActive] = useState('전체')
   const [page, setPage] = useState(1)
   const [items, setItems] = useState([])
   const [total, setTotal] = useState(0)
   const [listing, setListing] = useState(true)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    const onScroll = () => setSolid(window.scrollY > 90)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   useEffect(() => {
     let live = true
@@ -65,7 +76,7 @@ export default function MainPage() {
 
   return (
     <div className="shop">
-      <NavBar user={user} loading={loading} onSignOut={signOut} cartCount={cart?.count ?? 0}
+      <NavBar user={user} loading={loading} onSignOut={signOut} cartCount={cart?.count ?? 0} solid={solid}
         categories={categories} active={active} onSelect={selectCategory} />
 
       <main>
