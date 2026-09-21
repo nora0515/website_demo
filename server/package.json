@@ -1,0 +1,24 @@
+{
+  "name": "shoppingmall-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Shopping mall API built with Express and MongoDB",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.1",
+    "express": "^5.2.1",
+    "mongoose": "^9.10.1"
+  },
+  "devDependencies": {
+    "mongodb-memory-server": "^11.2.0"
+  }
+}

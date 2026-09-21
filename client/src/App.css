@@ -1,0 +1,49 @@
+.starter { max-width: 800px; margin: 10vh auto; padding: 32px 24px; }
+.eyebrow { color: #3759ce; font-size: 14px; font-weight: 700; letter-spacing: 0.15em; }
+h1 { font-size: clamp(28px, 5vw, 42px); line-height: 1.3; }
+h2 { font-size: 20px; margin-top: 0; }
+section { margin-top: 40px; padding: 24px; background: white; border: 1px solid #dce2ee; border-radius: 16px; }
+code { background: #e9edf6; padding: 3px 6px; border-radius: 4px; }
+button { border: 0; border-radius: 8px; background: #3455cc; color: white; padding: 10px 20px; cursor: pointer; }
+button:hover { background: #2944a6; }
+button:disabled { opacity: 0.6; cursor: wait; }
+
+
+.primary-link { display: inline-block; padding: 12px 24px; background: #222; color: #fff; text-decoration: none; border-radius: 5px; font-weight: 600; }
+.primary-link:hover { background: #444; }
+.signup-page { max-width: 464px; margin: 32px auto 56px; padding: 0 16px; color: #222; }
+.back-link { display: inline-block; color: #777; text-decoration: none; font-size: 13px; margin-bottom: 16px; }
+.back-link:hover { color: #111; }
+.signup-card { padding: 30px 26px 24px; background: #fff; border: 1px solid #e8e8e8; border-radius: 6px; box-shadow: 0 3px 18px #1c263708; }
+.signup-heading { text-align: center; margin-bottom: 30px; }
+.signup-heading h1, .signup-success h1 { font-size: 24px; font-weight: 750; margin: 0 0 8px; letter-spacing: -0.7px; }
+.signup-heading p { color: #777; font-size: 14px; margin: 0; }
+.signup-card fieldset { padding: 0; margin: 0; border: 0; min-width: 0; }
+.signup-field { margin-bottom: 20px; }
+.signup-field label { display: block; font-size: 13px; font-weight: 650; margin-bottom: 8px; }
+.input-shell { display: flex; align-items: center; gap: 10px; border: 1px solid #e3e3e3; border-radius: 5px; padding: 0 11px; color: #aaa; background: white; }
+.input-shell:focus-within { border-color: #666; box-shadow: 0 0 0 2px #00000008; }
+.input-shell:has([aria-invalid="true"]) { border-color: #bc3636; }
+.input-shell > svg { flex-shrink: 0; }
+.input-shell input { min-width: 0; width: 100%; border: 0; background: transparent; padding: 12px 0; font: inherit; font-size: 14px; color: #222; outline: none; }
+.input-shell input::placeholder { color: #a0a0a0; }
+.signup-card .visibility-toggle { background: transparent; color: #999; padding: 8px 0 8px 6px; border-radius: 2px; display: flex; flex-shrink: 0; }
+.signup-card .visibility-toggle:hover { color: #222; }
+.signup-field small { display: block; font-size: 11px; color: #888; margin-top: 6px; }
+.optional { color: #999; font-weight: 400; }
+.signup-footer { border-top: 1px solid #eee; padding-top: 20px; margin-top: 24px; }
+.signup-card .signup-submit { display: block; width: 100%; background: #777; border-radius: 4px; font-size: 14px; font-weight: 650; padding: 13px; }
+.signup-card .signup-submit:hover { background: #444; }
+.signup-card fieldset:disabled { opacity: .65; }
+.signup-note { color: #999; text-align: center; font-size: 11px; margin: 12px 0 0; }
+.field-error, .submit-error { color: #b42318; font-size: 12px; margin: 6px 0 0; }
+.submit-error { margin-bottom: 14px; }
+.signup-success { text-align: center; padding: 28px 0; }
+.signup-success h1 { font-size: 21px; }
+.signup-success p { color: #777; font-size: 14px; margin-bottom: 28px; }
+.success-mark { display: block; font-size: 30px; margin-bottom: 18px; }
+a:focus-visible { outline: 3px solid #779cff; outline-offset: 4px; }
+@media (max-width: 480px) {
+  .signup-page { margin-top: 16px; padding: 0 12px; }
+  .signup-card { padding: 26px 18px 22px; }
+}
