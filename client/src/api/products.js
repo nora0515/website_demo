@@ -27,8 +27,14 @@ async function request(path, options = {}) {
   return response.json()
 }
 
-export function listProducts({ page = 1, limit = 50 } = {}) {
-  return request(`/products?page=${page}&limit=${limit}`)
+export function listProducts({ page = 1, limit = 50, category } = {}) {
+  const query = new URLSearchParams({ page, limit })
+  if (category) query.set('category', category)
+  return request(`/products?${query}`)
+}
+
+export function getProduct(id) {
+  return request(`/products/${id}`)
 }
 
 export function createProduct(product) {
@@ -36,6 +42,14 @@ export function createProduct(product) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(product),
+  })
+}
+
+export function updateProduct(id, patch) {
+  return request(`/products/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(patch),
   })
 }
 

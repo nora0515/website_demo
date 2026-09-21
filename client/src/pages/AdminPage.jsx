@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react'
 import StatCard from '@/components/StatCard'
 import useSession from '@/hooks/useSession'
 import { countUsers } from '@/api/users'
-import { products } from '@/data/products'
-import { quickActions, recentOrders, statusTone } from '@/data/dashboard'
+import { listProducts } from '@/api/products'
+import { listOrders } from '@/api/orders'
+import OrderStatus from '@/components/OrderStatus'
+import { quickActions } from '@/data/dashboard'
 
 const won = new Intl.NumberFormat('ko-KR')
 
@@ -20,6 +22,10 @@ function ActionIcon({ kind }) {
 export default function AdminPage() {
   const { user, loading } = useSession()
   const [customers, setCustomers] = useState(null)
+  const [productCount, setProductCount] = useState(null)
+  const [orderCount, setOrderCount] = useState(null)
+  const [revenue, setRevenue] = useState(null)
+  const [recent, setRecent] = useState([])
   const [notice, setNotice] = useState('')
 
   // Only admins belong here; everyone else goes back to the shop.
@@ -32,6 +38,18 @@ export default function AdminPage() {
     if (!allowed) return undefined
     let live = true
     countUsers().then((total) => { if (live) setCustomers(total) })
+    listProducts({ limit: 1 })
+      .then((data) => { if (live) setProductCount(data.total) })
+      .catch(() => { if (live) setProductCount(null) })
+    listOrders({ limit: 5 })
+      .then((data) => { if (live) { setOrderCount(data.total); setRecent(data.orders) } })
+      .catch(() => { if (live) setOrderCount(null) })
+    // Revenue counts confirmed orders only, since those are the settled ones.
+    listOrders({ limit: 100, status: 'confirmed' })
+      .then((data) => {
+        if (live) setRevenue(data.orders.reduce((sum, order) => sum + order.total, 0))
+      })
+      .catch(() => { if (live) setRevenue(null) })
     return () => { live = false }
   }, [allowed])
 
@@ -53,11 +71,14 @@ export default function AdminPage() {
         </section>
 
         <section className="stat-grid" aria-label="요약 지표">
-          <StatCard label="총 주문" value="1,234" delta="+12% from last month" icon="cart" tone="blue" />
-          <StatCard label="총 상품" value={won.format(products.length)} delta="등록된 상품 기준" icon="box" tone="green" />
+          <StatCard label="총 주문" value={orderCount === null ? '—' : won.format(orderCount)}
+            delta="취소 포함 전체 주문" icon="cart" tone="blue" pending={orderCount === null} />
+          <StatCard label="총 상품" value={productCount === null ? '—' : won.format(productCount)}
+            delta="등록된 상품 기준" icon="box" tone="green" pending={productCount === null} />
           <StatCard label="총 고객" value={customers === null ? '—' : won.format(customers)}
             delta="가입 계정 기준" icon="users" tone="violet" pending={customers === null} />
-          <StatCard label="총 매출" value={`${won.format(45678000)}원`} delta="+15% from last month" icon="trend" tone="orange" />
+          <StatCard label="총 매출" value={revenue === null ? '—' : `${won.format(revenue)}원`}
+            delta="확정된 주문 기준" icon="trend" tone="orange" pending={revenue === null} />
         </section>
 
         {notice && <p className="admin-notice" role="status">{notice}</p>}
@@ -83,23 +104,26 @@ export default function AdminPage() {
           <section className="panel" aria-labelledby="orders-title">
             <div className="panel-head">
               <h2 id="orders-title">최근 주문</h2>
-              <button className="panel-link" type="button"
-                onClick={() => setNotice('주문 목록은 준비 중입니다.')}>전체보기</button>
+              <a className="panel-link" href="/admin/orders">전체보기</a>
             </div>
-            <ul className="order-list">
-              {recentOrders.map((order) => (
-                <li key={order.id}>
-                  <div className="order-main">
-                    <p className="order-id">{order.id}</p>
-                    <p className="order-meta">{order.customer} · {order.date}</p>
-                  </div>
-                  <div className="order-side">
-                    <span className={`status status-${statusTone[order.status]}`}>{order.status}</span>
-                    <p className="order-amount">{won.format(order.amount)}원</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            {recent.length === 0
+              ? <p className="table-empty">아직 주문이 없습니다.</p>
+              : <ul className="order-list">
+                {recent.map((order) => (
+                  <li key={order._id}>
+                    <div className="order-main">
+                      <p className="order-id">{order.order_number}</p>
+                      <p className="order-meta">
+                        {order.user?.name ?? '-'} · {new Date(order.createdAt).toLocaleDateString('ko-KR')}
+                      </p>
+                    </div>
+                    <div className="order-side">
+                      <OrderStatus status={order.status} payment={order.payment_status} />
+                      <p className="order-amount">{won.format(order.total)}원</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>}
           </section>
         </div>
 

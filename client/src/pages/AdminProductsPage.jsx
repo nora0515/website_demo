@@ -9,7 +9,7 @@ const TABS = [
   { id: 'new', label: '상품 등록' },
 ]
 
-function ProductTable({ items, loading, error, onDelete }) {
+function ProductTable({ items, loading, error, onEdit, onDelete }) {
   if (loading) return <p className="table-empty">불러오는 중…</p>
   if (error) return <p className="table-empty">{error}</p>
   if (!items.length) return <p className="table-empty">등록된 상품이 없습니다. 상품 등록 탭에서 추가해 보세요.</p>
@@ -27,8 +27,10 @@ function ProductTable({ items, loading, error, onDelete }) {
             <td><span className="chip">{product.category}</span></td>
             <td className="right">{won.format(product.price)}원</td>
             <td className="right">
-              <button className="row-delete" type="button"
-                onClick={() => onDelete(product)}>삭제</button>
+              <div className="row-actions">
+                <button className="row-edit" type="button" onClick={() => onEdit(product)}>수정</button>
+                <button className="row-delete" type="button" onClick={() => onDelete(product)}>삭제</button>
+              </div>
             </td>
           </tr>
         ))}
@@ -44,6 +46,7 @@ export default function AdminProductsPage() {
   const [listing, setListing] = useState(true)
   const [listError, setListError] = useState('')
   const [reloads, setReloads] = useState(0)
+  const [editing, setEditing] = useState(null)
 
   const allowed = Boolean(user) && user.user_type === 'admin'
   useEffect(() => {
@@ -64,6 +67,16 @@ export default function AdminProductsPage() {
   function reload() {
     setListing(true)
     setReloads((count) => count + 1)
+  }
+
+  function edit(product) {
+    setEditing(product)
+    setTab('new')
+  }
+
+  function startNew() {
+    setEditing(null)
+    setTab('new')
   }
 
   async function remove(product) {
@@ -92,7 +105,7 @@ export default function AdminProductsPage() {
           </a>
           <p className="admin-brand">상품 관리</p>
         </div>
-        <button className="admin-cta" type="button" onClick={() => setTab('new')}>
+        <button className="admin-cta" type="button" onClick={startNew}>
           <span aria-hidden="true">+</span> 새 상품 등록
         </button>
       </header>
@@ -102,7 +115,9 @@ export default function AdminProductsPage() {
           {TABS.map(({ id, label }) => (
             <button key={id} type="button" role="tab" aria-selected={tab === id}
               className={tab === id ? 'tab is-active' : 'tab'}
-              onClick={() => setTab(id)}>{label}</button>
+              onClick={() => { if (id === 'new') startNew(); else setTab(id) }}>
+              {id === 'new' && editing ? '상품 수정' : label}
+            </button>
           ))}
         </div>
 
@@ -113,9 +128,11 @@ export default function AdminProductsPage() {
                 <h2>등록된 상품 <span className="count-badge">{items.length}</span></h2>
                 <button className="panel-link" type="button" onClick={reload}>새로고침</button>
               </div>
-              <ProductTable items={items} loading={listing} error={listError} onDelete={remove} />
+              <ProductTable items={items} loading={listing} error={listError}
+                onEdit={edit} onDelete={remove} />
             </>
-            : <ProductForm onCreated={reload} />}
+            : <ProductForm key={editing?._id ?? 'new'} product={editing}
+              onSaved={reload} onCancel={() => { setEditing(null); setTab('list') }} />}
         </section>
       </main>
     </div>

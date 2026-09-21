@@ -31,6 +31,7 @@ export default function UserMenu({ name, onSignOut }) {
           strokeLinejoin="round" aria-hidden="true"><path d="m5 9 7 7 7-7" /></svg>
       </button>
       {open && <div className="user-menu-list" role="menu">
+        <a className="user-menu-item" href="/orders" role="menuitem">주문 내역</a>
         <button className="user-menu-item" type="button" role="menuitem" onClick={onSignOut}>
           로그아웃
         </button>
